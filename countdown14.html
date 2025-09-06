@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级倒计时工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1a73e8;
+            margin: 0;
+        }
+        .toggle-btn {
+            background-color: #ccc;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toggle-btn:hover {
+            background-color: #999;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input[type="text"], .input-group input[type="datetime-local"], .input-group select, .input-group input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background-color: #1a73e8;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .action-btn.cancel {
+            background-color: #aaa;
+        }
+        .action-btn.cancel:hover {
+            background-color: #888;
+        }
+        .action-btn:hover {
+            background-color: #155bb5;
+        }
+        .countdown-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .countdown-item {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            position: relative;
+            cursor: grab;
+            transition: background-color 0.2s;
+        }
+        .countdown-item:hover {
+            background-color: #f0f0f0;
+        }
+        .countdown-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .countdown-item h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #444;
+        }
+        .countdown-item .date-title {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        .countdown-item p {
+            font-size: 1.2em;
+            margin: 0;
+            color: #666;
+        }
+        .item-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .item-actions button {
+            background-color: transparent;
+            color: #aaa;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .item-actions .edit-btn:hover {
+            color: #1a73e8;
+        }
+        .item-actions .delete-btn:hover {
+            color: #e74c3c;
+        }
+        .hidden {
+            display: none;
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .settings-group {
+            flex-grow: 1;
+        }
+        .settings-group.time-units {
+            flex-basis: 66%;
+        }
+        .settings-group.decimal {
+            flex-basis: 33%;
+        }
+        .format-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .format-options input[type="checkbox"] {
+            width: auto;
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+        }
+        /* New CSS for layout toggle */
+        .main-container.reverse-layout {
+            flex-direction: column-reverse;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container" id="main-container">
+        <div class="container" id="tools-container">
+            <div class="header">
+                <h1>我的倒计时工具</h1>
+                <button id="toggle-add-btn" class="toggle-btn">隐藏</button>
+                <button id="toggle-layout-btn-top" class="toggle-btn">切换布局</button>
+            </div>
+            <div id="add-section">
+                <div class="input-group">
+                    <label for="event-name">事件名称:</label>
+                    <input type="text" id="event-name" placeholder="例如：生日">
+                </div>
+                <div class="input-group">
+                    <label for="event-date">截止日期和时间:</label>
+                    <input type="datetime-local" id="event-date">
+                </div>
+                <div class="button-group">
+                    <button id="cancel-edit-btn" class="action-btn cancel hidden">取消编辑</button>
+                    <button id="add-update-btn" class="action-btn">添加倒计时</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container" id="list-container">
+            <div class="header">
+                <h1>我的倒计时</h1>
+                <button id="toggle-settings-btn" class="toggle-btn">隐藏设置</button>
+                <button id="toggle-layout-btn-bottom" class="toggle-btn">切换布局</button>
+            </div>
+            <div id="settings-section">
+                <div class="settings-row">
+                    <div class="settings-group time-units">
+                        <div class="input-group">
+                            <label>时间显示设置:</label>
+                            <div class="format-options">
+                                <label><input type="checkbox" id="check-years">年</label>
+                                <label><input type="checkbox" id="check-months">月</label>
+                                <label><input type="checkbox" id="check-weeks">周</label>
+                                <label><input type="checkbox" id="check-days">日</label>
+                                <label><input type="checkbox" id="check-hours">时</label>
+                                <label><input type="checkbox" id="check-minutes">分</label>
+                                <label><input type="checkbox" id="check-seconds" checked>秒</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-group decimal">
+                        <div class="input-group">
+                            <label for="decimal-places">小数位数 (0-10):</label>
+                            <input type="number" id="decimal-places" value="0" min="0" max="10">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="countdown-list" class="countdown-list">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const mainContainer = document.getElementById('main-container');
+        const toolsContainer = document.getElementById('tools-container');
+        const listContainer = document.getElementById('list-container');
+        const countdownList = document.getElementById('countdown-list');
+        const eventNameInput = document.getElementById('event-name');
+        const eventDateInput = document.getElementById('event-date');
+        const addUpdateBtn = document.getElementById('add-update-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const toggleAddBtn = document.getElementById('toggle-add-btn');
+        const addSection = document.getElementById('add-section');
+        const settingsSection = document.getElementById('settings-section');
+        const toggleSettingsBtn = document.getElementById('toggle-settings-btn');
+        const toggleLayoutBtnTop = document.getElementById('toggle-layout-btn-top');
+        const toggleLayoutBtnBottom = document.getElementById('toggle-layout-btn-bottom');
+        const checkYears = document.getElementById('check-years');
+        const checkMonths = document.getElementById('check-months');
+        const checkWeeks = document.getElementById('check-weeks');
+        const checkDays = document.getElementById('check-days');
+        const checkHours = document.getElementById('check-hours');
+        const checkMinutes = document.getElementById('check-minutes');
+        const checkSeconds = document.getElementById('check-seconds');
+        const decimalPlacesInput = document.getElementById('decimal-places');
+        let countdowns = JSON.parse(localStorage.getItem('countdowns')) || [];
+        let editingId = null;
+        let dragSrcEl = null;
+
+        function renderCountdowns() {
+            countdownList.innerHTML = '';
+            countdowns.forEach(item => {
+                const countdownItem = document.createElement('div');
+                countdownItem.className = 'countdown-item';
+                countdownItem.dataset.id = item.id;
+                countdownItem.draggable = true;
+                
+                countdownItem.innerHTML = `
+                    <h2>${item.name}</h2>
+                    <div class="date-title">截止日期：${new Date(item.date).toLocaleString()}</div>
+                    <p id="time-left-${item.id}"></p>
+                    <div class="item-actions">
+                        <button class="edit-btn" onclick="editCountdown('${item.id}')">编辑</button>
+                        <button class="delete-btn" onclick="deleteCountdown('${item.id}')">&times;</button>
+                    </div>
+                `;
+                countdownList.appendChild(countdownItem);
+            });
+            addDragListeners();
+        }
+
+        function saveCountdowns() {
+            localStorage.setItem('countdowns', JSON.stringify(countdowns));
+        }
+
+        function updateCountdownDisplay() {
+            const units = [
+                { id: 'check-years', label: '年', value: 365.25 * 24 * 60 * 60 * 1000 },
+                { id: 'check-months', label: '月', value: 30.4375 * 24 * 60 * 60 * 1000 },
+                { id: 'check-weeks', label: '周', value: 7 * 24 * 60 * 60 * 1000 },
+                { id: 'check-days', label: '日', value: 24 * 60 * 60 * 1000 },
+                { id: 'check-hours', label: '时', value: 60 * 60 * 1000 },
+                { id: 'check-minutes', label: '分', value: 60 * 1000 },
+                { id: 'check-seconds', label: '秒', value: 1000 }
+            ];
+
+            const activeUnits = units.filter(unit => document.getElementById(unit.id).checked);
+            const decimalPlaces = parseInt(decimalPlacesInput.value);
+
+            countdowns.forEach(item => {
+                const now = new Date().getTime();
+                const distance = new Date(item.date).getTime() - now;
+                const displayElement = document.getElementById(`time-left-${item.id}`);
+                if (!displayElement) return;
+
+                let absDistance = Math.abs(distance);
+                const isPast = distance < 0;
+                let displayText = '';
+                
+                if (activeUnits.length === 0) {
+                    displayElement.innerHTML = '请选择时间单位';
+                    return;
+                }
+
+                activeUnits.forEach((unit, index) => {
+                    const isLastUnit = index === activeUnits.length - 1;
+                    const unitValue = unit.value;
+                    let unitAmount;
+                    
+                    if (isLastUnit) {
+                        unitAmount = (absDistance / unitValue).toFixed(decimalPlaces);
+                    } else {
+                        unitAmount = Math.floor(absDistance / unitValue);
+                        absDistance %= unitValue;
+                    }
+
+                    if (unitAmount > 0 || displayText !== '' || isLastUnit) {
+                        displayText += `${unitAmount}${unit.label} `;
+                    }
+                });
+
+                displayElement.innerHTML = (isPast ? "已过去 " : "还剩 ") + displayText.trim();
+            });
+        }
+
+        function addOrUpdateCountdown() {
+            const name = eventNameInput.value.trim();
+            const date = eventDateInput.value;
+            if (!name || !date) {
+                alert('请填写事件名称和截止日期！');
+                return;
+            }
+            if (editingId) {
+                const itemToUpdate = countdowns.find(item => item.id === editingId);
+                if (itemToUpdate) {
+                    itemToUpdate.name = name;
+                    itemToUpdate.date = date;
+                }
+                resetForm();
+            } else {
+                const newId = Date.now().toString();
+                countdowns.push({ id: newId, name: name, date: date });
+                eventNameInput.value = '';
+                eventDateInput.value = '';
+            }
+            saveCountdowns();
+            renderCountdowns();
+        }
+
+        function editCountdown(id) {
+            const itemToEdit = countdowns.find(item => item.id === id);
+            if (itemToEdit) {
+                editingId = id;
+                eventNameInput.value = itemToEdit.name;
+                eventDateInput.value = itemToEdit.date;
+                addUpdateBtn.textContent = '更新倒计时';
+                cancelEditBtn.classList.remove('hidden');
+                addSection.classList.remove('hidden');
+                toggleAddBtn.textContent = '隐藏';
+            }
+        }
+
+        function cancelEdit() {
+            resetForm();
+        }
+
+        function deleteCountdown(id) {
+            countdowns = countdowns.filter(item => item.id !== id);
+            saveCountdowns();
+            renderCountdowns();
+            resetForm();
+        }
+
+        function resetForm() {
+            editingId = null;
+            eventNameInput.value = '';
+            eventDateInput.value = '';
+            addUpdateBtn.textContent = '添加倒计时';
+            cancelEditBtn.classList.add('hidden');
+        }
+
+        function toggleAddSection() {
+            const isHidden = addSection.classList.toggle('hidden');
+            toggleAddBtn.textContent = isHidden ? '显示' : '隐藏';
+        }
+
+        function toggleSettingsSection() {
+            const isHidden = settingsSection.classList.toggle('hidden');
+            toggleSettingsBtn.textContent = isHidden ? '显示设置' : '隐藏设置';
+        }
+
+        function toggleLayout() {
+            mainContainer.classList.toggle('reverse-layout');
+        }
+
+        // Drag and Drop Logic
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+            this.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (e.target.closest('.countdown-item')) {
+                const dropTarget = e.target.closest('.countdown-item');
+                if (dropTarget !== dragSrcEl) {
+                    const rect = dropTarget.getBoundingClientRect();
+                    const isAfter = e.clientY > rect.top + rect.height / 2;
+                    countdownList.insertBefore(dragSrcEl, isAfter ? dropTarget.nextSibling : dropTarget);
+                }
+            }
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            const newOrder = Array.from(countdownList.children).map(el => {
+                const id = el.dataset.id;
+                return countdowns.find(c => c.id === id);
+            });
+            countdowns = newOrder;
+            saveCountdowns();
+        }
+
+        function addDragListeners() {
+            const items = document.querySelectorAll('.countdown-item');
+            items.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+            countdownList.addEventListener('dragover', handleDragOver);
+        }
+
+        // Event Listeners
+        checkYears.addEventListener('change', updateCountdownDisplay);
+        checkMonths.addEventListener('change', updateCountdownDisplay);
+        checkWeeks.addEventListener('change', updateCountdownDisplay);
+        checkDays.addEventListener('change', updateCountdownDisplay);
+        checkHours.addEventListener('change', updateCountdownDisplay);
+        checkMinutes.addEventListener('change', updateCountdownDisplay);
+        checkSeconds.addEventListener('change', updateCountdownDisplay);
+        decimalPlacesInput.addEventListener('input', updateCountdownDisplay);
+        
+        addUpdateBtn.addEventListener('click', addOrUpdateCountdown);
+        cancelEditBtn.addEventListener('click', cancelEdit);
+        toggleAddBtn.addEventListener('click', toggleAddSection);
+        toggleSettingsBtn.addEventListener('click', toggleSettingsSection);
+        toggleLayoutBtnTop.addEventListener('click', toggleLayout);
+        toggleLayoutBtnBottom.addEventListener('click', toggleLayout);
+
+        renderCountdowns();
+        setInterval(updateCountdownDisplay, 50);
+    </script>
+</body>
+</html>
