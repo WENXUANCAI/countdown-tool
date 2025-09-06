@@ -1,2 +1,2 @@
 # countdown-tool
-Is a website for count down, unit change from year to seconds
+This is a website for count down, change from year to seconds. You can have decimals, precision up to 10 digits.
